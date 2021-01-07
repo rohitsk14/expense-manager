@@ -4,10 +4,16 @@ import Colors from '../components/colors';
 import Header from '../components/Header';
 import Card from '../components/Card';
 import Input from '../components/Input';
+import {useSelector, useDispatch} from 'react-redux';
+import {withdraw} from '../features/slice';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const Expenses = (props) => {
     const [isModelOn, setIsModelOn] = useState(false);
     const [list, setList] = useState([]);
+
+    const amount = useSelector(selector);
+    const dispatch = useDispatch();
 
     const modalHandler = () => {
         setIsModelOn(true);
@@ -17,10 +23,20 @@ const Expenses = (props) => {
         setIsModelOn(false);
     }
 
+    const setAsyncBalance = async(bal) => {
+        var n = bal.toString();
+        try{
+            await AsyncStorage.setItem('balance', n);
+        }catch(e){
+            console.log(e);
+        }
+    }
+
     const addHandler = (desc, amt) => {
-        let avail = props.balance - parseInt(amt);
+        let avail = amount - parseInt(amt);
         if(avail>0){
-            props.changeBalance(avail);
+            dispatch(withdraw(avail));
+            setAsyncBalance(avail);
             setList([...list,{description: desc, amount: parseInt(amt)}]);
         }else{
             alert('Not enough balance');
@@ -35,7 +51,7 @@ const Expenses = (props) => {
         <Header />
         <View style={styles.body}>
             <View>
-                <Text style={styles.title} >{list.length ?'Expenses' : 'No current expenses'}</Text>
+                <Text style={styles.title} >{list.length ? 'Expenses' : 'No current expenses'}</Text>
                 <View style={styles.container} >
                 <FlatList
                     data={list}
@@ -60,6 +76,8 @@ const Expenses = (props) => {
     </View>
 );
 }
+
+const selector = state => state.amount.value;
 
 const styles = StyleSheet.create({
   screen: {
